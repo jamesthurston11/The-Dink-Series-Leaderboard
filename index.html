@@ -375,14 +375,17 @@
     }
 
     .player-row {
-      position: relative;
       display: grid;
-      grid-template-columns: 48px 1fr;
+      grid-template-columns: 52px minmax(0, 1fr);
       grid-template-areas:
         "rank name"
-        "rank details";
-      padding: 14px 14px;
-      min-height: 76px;
+        "rank episodes"
+        "rank medals";
+      column-gap: 10px;
+      row-gap: 3px;
+      padding: 14px;
+      min-height: 102px;
+      align-items: center;
     }
 
     .rank {
@@ -391,47 +394,63 @@
     }
 
     .rank-badge {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
+      font-size: 14px;
     }
 
     .player-name {
       grid-area: name;
-      font-size: 15px;
-      margin-bottom: 7px;
+      font-size: 16px;
+      line-height: 1.2;
+      padding-right: 0;
+      margin: 0;
+      align-self: end;
     }
 
     .episodes {
-      grid-area: details;
+      grid-area: episodes;
       font-size: 13px;
-      display: inline-block;
+      line-height: 1.2;
+      display: block;
+      align-self: center;
     }
 
     .episode-word {
       display: inline;
+      margin-left: 4px;
+      font-size: 9px;
+      letter-spacing: 0.8px;
+      color: rgba(255,255,255,.45);
+    }
+
+    .medal-row {
+      grid-area: medals;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 2px;
+      flex-wrap: wrap;
     }
 
     .medal {
-      grid-area: details;
-      display: inline;
-      margin-left: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin: 0;
       font-size: 12px;
     }
 
-    .episodes::after {
-      content: "";
-    }
-
     .player-row .gold::before {
-      content: "🥇 ";
+      content: "🥇";
     }
 
     .player-row .silver::before {
-      content: "🥈 ";
+      content: "🥈";
     }
 
     .player-row .bronze::before {
-      content: "🥉 ";
+      content: "🥉";
     }
 
     .footer {
@@ -473,7 +492,6 @@
     </div>
   </section>
 
-
   <section class="controls">
 
     <div class="search-wrap">
@@ -492,7 +510,6 @@
 
   </section>
 
-
   <section class="table-shell">
 
     <div class="table-header">
@@ -510,14 +527,12 @@
 
   </section>
 
-
   <div class="footer">
     <span id="visibleCount">Loading players…</span>
     <span>The Dink Series</span>
   </div>
 
 </div>
-
 
 <script>
 
@@ -526,7 +541,6 @@ const SHEET_URL =
 
 let allPlayers = [];
 let currentFilter = "all";
-
 
 function parseCSV(text) {
 
@@ -584,12 +598,10 @@ function parseCSV(text) {
   return rows;
 }
 
-
 function num(value) {
   const parsed = parseInt(String(value || "").trim(), 10);
   return Number.isFinite(parsed) ? parsed : 0;
 }
-
 
 async function loadLeaderboard() {
 
@@ -644,7 +656,6 @@ async function loadLeaderboard() {
         h === "BRONZE"
       );
 
-
     allPlayers = rows
       .slice(1)
       .map(row => ({
@@ -656,7 +667,6 @@ async function loadLeaderboard() {
       }))
       .filter(player => player.name);
 
-
     allPlayers.sort((a, b) =>
       b.episodes - a.episodes ||
       b.gold - a.gold ||
@@ -665,17 +675,14 @@ async function loadLeaderboard() {
       a.name.localeCompare(b.name)
     );
 
-
     const episodeLevels =
       [...new Set(allPlayers.map(p => p.episodes))]
         .sort((a,b) => b-a);
-
 
     allPlayers.forEach(player => {
       player.rank =
         episodeLevels.indexOf(player.episodes) + 1;
     });
-
 
     setupStats();
     setupFilters();
@@ -694,7 +701,6 @@ async function loadLeaderboard() {
       '</div>';
   }
 }
-
 
 function setupStats() {
 
@@ -718,7 +724,6 @@ function setupStats() {
     perfectPlayers;
 }
 
-
 function setupFilters() {
 
   const filterContainer =
@@ -729,10 +734,8 @@ function setupFilters() {
       .filter(n => n > 0)
       .sort((a,b) => b-a);
 
-
   filterContainer.innerHTML =
     '<button class="filter-btn active" data-filter="all">All Players</button>';
-
 
   episodeLevels.forEach((episode, index) => {
 
@@ -756,7 +759,6 @@ function setupFilters() {
     filterContainer.appendChild(button);
   });
 
-
   document.querySelectorAll(".filter-btn")
     .forEach(button => {
 
@@ -778,11 +780,9 @@ function setupFilters() {
     });
 }
 
-
 function medalClass(value) {
   return value === 0 ? "medal-zero" : "";
 }
-
 
 function renderPlayers() {
 
@@ -815,10 +815,8 @@ function renderPlayers() {
       return nameMatches && filterMatches;
     });
 
-
   const rowsContainer =
     document.getElementById("leaderboardRows");
-
 
   if (!filtered.length) {
 
@@ -830,7 +828,6 @@ function renderPlayers() {
 
     return;
   }
-
 
   rowsContainer.innerHTML =
     filtered.map(player => {
@@ -859,16 +856,18 @@ function renderPlayers() {
             <span class="episode-word">EPISODES</span>
           </div>
 
-          <div class="medal gold ${medalClass(player.gold)}">
-            ${player.gold}
-          </div>
+          <div class="medal-row">
+            <div class="medal gold ${medalClass(player.gold)}">
+              ${player.gold}
+            </div>
 
-          <div class="medal silver ${medalClass(player.silver)}">
-            ${player.silver}
-          </div>
+            <div class="medal silver ${medalClass(player.silver)}">
+              ${player.silver}
+            </div>
 
-          <div class="medal bronze ${medalClass(player.bronze)}">
-            ${player.bronze}
+            <div class="medal bronze ${medalClass(player.bronze)}">
+              ${player.bronze}
+            </div>
           </div>
 
         </div>
@@ -876,12 +875,10 @@ function renderPlayers() {
 
     }).join("");
 
-
   document.getElementById("visibleCount").textContent =
     filtered.length.toLocaleString() +
     (filtered.length === 1 ? " player" : " players");
 }
-
 
 function escapeHTML(value) {
 
@@ -893,7 +890,6 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
-
 document
   .getElementById("playerSearch")
   .addEventListener("input", () => {
@@ -904,7 +900,6 @@ document
       .getElementById("leaderboardRows")
       .scrollTop = 0;
   });
-
 
 loadLeaderboard();
 
