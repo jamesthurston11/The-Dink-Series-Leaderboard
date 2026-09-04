@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>The Dink Series — All-Time Leaderboard</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    color: #111;
+  }
+
+  body {
+    padding: 12px;
+  }
+
+  .dink-leaderboard {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    background: #0b0b0b;
+    color: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 18px 55px rgba(0,0,0,0.16);
+  }
+
+  .hero {
+    padding: 38px 38px 26px;
+    background:
+      radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 34%),
+      linear-gradient(145deg, #080808, #171717);
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    opacity: 0.72;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(34px, 5vw, 64px);
+    line-height: 0.96;
+    letter-spacing: -2px;
+    text-transform: uppercase;
+    font-weight: 900;
+  }
+
+  .subtitle {
+    margin-top: 14px;
+    font-size: 15px;
+    color: rgba(255,255,255,0.68);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .stat {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 16px;
+    padding: 18px 20px;
+  }
+
+  .stat-number {
+    display: block;
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: -1px;
+  }
+
+  .stat-label {
+    display: block;
+    margin-top: 3px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+  }
+
+  .controls {
+    padding: 20px 26px 17px;
+    background: #111;
+  }
+
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .65;
+    font-size: 17px;
+  }
+
+  #playerSearch {
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.14);
+    outline: none;
+    border-radius: 14px;
+    padding: 14px 16px 14px 45px;
+    background: rgba(255,255,255,0.06);
+    color: white;
+    font-size: 15px;
+  }
+
+  #playerSearch::placeholder {
+    color: rgba(255,255,255,0.45);
+  }
+
+  #playerSearch:focus {
+    border-color: rgba(255,255,255,0.42);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-top: 13px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-btn {
+    flex: 0 0 auto;
+    border: 1px solid rgba(255,255,255,0.13);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.73);
+    padding: 9px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+    transition: .18s ease;
+  }
+
+  .filter-btn:hover {
+    background: rgba(255,255,255,0.10);
+  }
+
+  .filter-btn.active {
+    background: white;
+    color: #080808;
+    border-color: white;
+  }
+
+  .table-shell {
+    background: #0d0d0d;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .table-header,
+  .player-row {
+    display: grid;
+    grid-template-columns: 82px minmax(230px, 1fr) 110px 72px 72px 72px;
+    align-items: center;
+    padding-left: 26px;
+    padding-right: 26px;
+  }
+
+  .table-header {
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #161616;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.50);
+    font-weight: 900;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .rows {
+    height: 680px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: rgba(255,255,255,.30) transparent;
+    scrollbar-width: thin;
+  }
+
+  .rows::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .rows::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .rows::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.26);
+    border-radius: 999px;
+  }
+
+  .player-row {
+    min-height: 58px;
+    border-bottom: 1px solid rgba(255,255,255,0.075);
+    transition: background .15s ease;
+  }
+
+  .player-row:hover {
+    background: rgba(255,255,255,0.045);
+  }
+
+  .rank {
+    font-weight: 900;
+    font-size: 14px;
+  }
+
+  .rank-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+  }
+
+  .rank-1 {
+    color: #151008;
+    background: linear-gradient(145deg,#f9df78,#b98316);
+    border-color: #f0cf62;
+    box-shadow: 0 0 20px rgba(220,170,50,.13);
+  }
+
+  .rank-2 {
+    background: linear-gradient(145deg,#e8e8e8,#8c8c8c);
+    color: #131313;
+  }
+
+  .rank-3 {
+    background: linear-gradient(145deg,#dda36f,#8a4d22);
+    color: white;
+  }
+
+  .player-name {
+    font-weight: 800;
+    font-size: 15px;
+    padding-right: 12px;
+  }
+
+  .episodes {
+    font-size: 17px;
+    font-weight: 900;
+  }
+
+  .episode-word {
+    display: none;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,.45);
+    margin-left: 4px;
+  }
+
+  .medal {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .medal-zero {
+    color: rgba(255,255,255,.25);
+  }
+
+  .footer {
+    padding: 15px 26px 19px;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: rgba(255,255,255,.38);
+    background: #0a0a0a;
+  }
+
+  .loading,
+  .empty,
+  .error {
+    padding: 60px 25px;
+    text-align: center;
+    color: rgba(255,255,255,.65);
+  }
+
+  .error {
+    color: #ffb5b5;
+  }
+
+  @media (max-width: 780px) {
+
+    body {
+      padding: 5px;
+    }
+
+    .dink-leaderboard {
+      border-radius: 18px;
+    }
+
+    .hero {
+      padding: 27px 20px 21px;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: 3px;
+    }
+
+    h1 {
+      font-size: 38px;
+      letter-spacing: -1.3px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+    }
+
+    .stats {
+      margin-top: 20px;
+      gap: 7px;
+    }
+
+    .stat {
+      padding: 13px 9px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 23px;
+    }
+
+    .stat-label {
+      font-size: 8px;
+      letter-spacing: 1px;
+    }
+
+    .controls {
+      padding: 15px 13px 13px;
+    }
+
+    .table-header {
+      display: none;
+    }
+
+    .rows {
+      height: 620px;
+    }
+
+    .player-row {
+      position: relative;
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      grid-template-areas:
+        "rank name"
+        "rank details";
+      padding: 14px 14px;
+      min-height: 76px;
+    }
+
+    .rank {
+      grid-area: rank;
+      align-self: center;
+    }
+
+    .rank-badge {
+      width: 38px;
+      height: 38px;
+    }
+
+    .player-name {
+      grid-area: name;
+      font-size: 15px;
+      margin-bottom: 7px;
+    }
+
+    .episodes {
+      grid-area: details;
+      font-size: 13px;
+      display: inline-block;
+    }
+
+    .episode-word {
+      display: inline;
+    }
+
+    .medal {
+      grid-area: details;
+      display: inline;
+      margin-left: 13px;
+      font-size: 12px;
+    }
+
+    .episodes::after {
+      content: "";
+    }
+
+    .player-row .gold::before {
+      content: "🥇 ";
+    }
+
+    .player-row .silver::before {
+      content: "🥈 ";
+    }
+
+    .player-row .bronze::before {
+      content: "🥉 ";
+    }
+
+    .footer {
+      padding: 13px 15px 16px;
+      font-size: 8px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="dink-leaderboard">
+
+  <section class="hero">
+    <div class="eyebrow">THE DINK SERIES</div>
+
+    <h1>All-Time<br>Leaderboard</h1>
+
+    <div class="subtitle">
+      Every episode counts. See who keeps coming back.
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-number" id="playerCount">—</span>
+        <span class="stat-label">Players</span>
+      </div>
+
+      <div class="stat">
+        <span class="stat-number" id="episodeCount">—</span>
+        <span class="stat-label">Episodes</span>
+      </div>
+
+      <div class="stat">
+        <span class="stat-number" id="perfectCount">—</span>
+        <span class="stat-label">Perfect Attendance</span>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="controls">
+
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input
+        id="playerSearch"
+        type="search"
+        autocomplete="off"
+        placeholder="Search player..."
+      >
+    </div>
+
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="all">All Players</button>
+    </div>
+
+  </section>
+
+
+  <section class="table-shell">
+
+    <div class="table-header">
+      <div>Rank</div>
+      <div>Player</div>
+      <div>Episodes</div>
+      <div>Gold</div>
+      <div>Silver</div>
+      <div>Bronze</div>
+    </div>
+
+    <div class="rows" id="leaderboardRows">
+      <div class="loading">Loading leaderboard…</div>
+    </div>
+
+  </section>
+
+
+  <div class="footer">
+    <span id="visibleCount">Loading players…</span>
+    <span>The Dink Series</span>
+  </div>
+
+</div>
+
+
+<script>
+
+const SHEET_URL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSLiPrOnr2MhFQiqFe6Uai_fMMgEhm-QefB-pRoFPftDS0IN1zwdcD_yfDPM4O_w-tzHyHBSrX8CSSI/pub?gid=1397127841&single=true&output=csv";
+
+let allPlayers = [];
+let currentFilter = "all";
+
+
+function parseCSV(text) {
+
+  const rows = [];
+  let row = [];
+  let value = "";
+  let insideQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && insideQuotes && next === '"') {
+      value += '"';
+      i++;
+    }
+
+    else if (char === '"') {
+      insideQuotes = !insideQuotes;
+    }
+
+    else if (char === "," && !insideQuotes) {
+      row.push(value);
+      value = "";
+    }
+
+    else if ((char === "\n" || char === "\r") && !insideQuotes) {
+
+      if (char === "\r" && next === "\n") {
+        i++;
+      }
+
+      row.push(value);
+
+      if (row.some(cell => cell.trim() !== "")) {
+        rows.push(row);
+      }
+
+      row = [];
+      value = "";
+    }
+
+    else {
+      value += char;
+    }
+  }
+
+  row.push(value);
+
+  if (row.some(cell => cell.trim() !== "")) {
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+
+function num(value) {
+  const parsed = parseInt(String(value || "").trim(), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+
+async function loadLeaderboard() {
+
+  const rowsContainer = document.getElementById("leaderboardRows");
+
+  try {
+
+    const freshURL =
+      SHEET_URL + "&cacheBust=" + Date.now();
+
+    const response = await fetch(freshURL, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error("Could not retrieve leaderboard data.");
+    }
+
+    const csvText = await response.text();
+    const rows = parseCSV(csvText);
+
+    if (rows.length < 2) {
+      throw new Error("Leaderboard data is empty.");
+    }
+
+    const headers = rows[0].map(h =>
+      h.trim().toUpperCase()
+    );
+
+    const nameIndex =
+      headers.findIndex(h =>
+        h.includes("PLAYER")
+      );
+
+    const episodesIndex =
+      headers.findIndex(h =>
+        h.includes("EPISODE")
+      );
+
+    const goldIndex =
+      headers.findIndex(h =>
+        h === "GOLD"
+      );
+
+    const silverIndex =
+      headers.findIndex(h =>
+        h === "SILVER"
+      );
+
+    const bronzeIndex =
+      headers.findIndex(h =>
+        h === "BRONZE"
+      );
+
+
+    allPlayers = rows
+      .slice(1)
+      .map(row => ({
+        name: (row[nameIndex] || "").trim(),
+        episodes: num(row[episodesIndex]),
+        gold: num(row[goldIndex]),
+        silver: num(row[silverIndex]),
+        bronze: num(row[bronzeIndex])
+      }))
+      .filter(player => player.name);
+
+
+    allPlayers.sort((a, b) =>
+      b.episodes - a.episodes ||
+      b.gold - a.gold ||
+      b.silver - a.silver ||
+      b.bronze - a.bronze ||
+      a.name.localeCompare(b.name)
+    );
+
+
+    const episodeLevels =
+      [...new Set(allPlayers.map(p => p.episodes))]
+        .sort((a,b) => b-a);
+
+
+    allPlayers.forEach(player => {
+      player.rank =
+        episodeLevels.indexOf(player.episodes) + 1;
+    });
+
+
+    setupStats();
+    setupFilters();
+    renderPlayers();
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    rowsContainer.innerHTML =
+      '<div class="error">' +
+      'Leaderboard could not be loaded.<br>' +
+      'Please try refreshing the page.' +
+      '</div>';
+  }
+}
+
+
+function setupStats() {
+
+  if (!allPlayers.length) return;
+
+  const maximumEpisodes =
+    Math.max(...allPlayers.map(p => p.episodes));
+
+  const perfectPlayers =
+    allPlayers.filter(
+      p => p.episodes === maximumEpisodes
+    ).length;
+
+  document.getElementById("playerCount").textContent =
+    allPlayers.length.toLocaleString();
+
+  document.getElementById("episodeCount").textContent =
+    maximumEpisodes;
+
+  document.getElementById("perfectCount").textContent =
+    perfectPlayers;
+}
+
+
+function setupFilters() {
+
+  const filterContainer =
+    document.getElementById("filters");
+
+  const episodeLevels =
+    [...new Set(allPlayers.map(p => p.episodes))]
+      .filter(n => n > 0)
+      .sort((a,b) => b-a);
+
+
+  filterContainer.innerHTML =
+    '<button class="filter-btn active" data-filter="all">All Players</button>';
+
+
+  episodeLevels.forEach((episode, index) => {
+
+    let label;
+
+    if (index === 0) {
+      label = episode + " Episodes";
+    }
+
+    else {
+      label = episode + "+ Episodes";
+    }
+
+    const button =
+      document.createElement("button");
+
+    button.className = "filter-btn";
+    button.dataset.filter = episode;
+    button.textContent = label;
+
+    filterContainer.appendChild(button);
+  });
+
+
+  document.querySelectorAll(".filter-btn")
+    .forEach(button => {
+
+      button.addEventListener("click", () => {
+
+        document.querySelectorAll(".filter-btn")
+          .forEach(btn => btn.classList.remove("active"));
+
+        button.classList.add("active");
+
+        currentFilter =
+          button.dataset.filter;
+
+        renderPlayers();
+
+        document.getElementById("leaderboardRows")
+          .scrollTop = 0;
+      });
+    });
+}
+
+
+function medalClass(value) {
+  return value === 0 ? "medal-zero" : "";
+}
+
+
+function renderPlayers() {
+
+  const search =
+    document
+      .getElementById("playerSearch")
+      .value
+      .toLowerCase()
+      .trim();
+
+  let filtered =
+    allPlayers.filter(player => {
+
+      const nameMatches =
+        player.name
+          .toLowerCase()
+          .includes(search);
+
+      let filterMatches = true;
+
+      if (currentFilter !== "all") {
+
+        const minimum =
+          parseInt(currentFilter, 10);
+
+        filterMatches =
+          player.episodes >= minimum;
+      }
+
+      return nameMatches && filterMatches;
+    });
+
+
+  const rowsContainer =
+    document.getElementById("leaderboardRows");
+
+
+  if (!filtered.length) {
+
+    rowsContainer.innerHTML =
+      '<div class="empty">No players found.</div>';
+
+    document.getElementById("visibleCount").textContent =
+      "0 players";
+
+    return;
+  }
+
+
+  rowsContainer.innerHTML =
+    filtered.map(player => {
+
+      let rankClass = "";
+
+      if (player.rank === 1) rankClass = "rank-1";
+      if (player.rank === 2) rankClass = "rank-2";
+      if (player.rank === 3) rankClass = "rank-3";
+
+      return `
+        <div class="player-row">
+
+          <div class="rank">
+            <span class="rank-badge ${rankClass}">
+              ${player.rank}
+            </span>
+          </div>
+
+          <div class="player-name">
+            ${escapeHTML(player.name)}
+          </div>
+
+          <div class="episodes">
+            ${player.episodes}
+            <span class="episode-word">EPISODES</span>
+          </div>
+
+          <div class="medal gold ${medalClass(player.gold)}">
+            ${player.gold}
+          </div>
+
+          <div class="medal silver ${medalClass(player.silver)}">
+            ${player.silver}
+          </div>
+
+          <div class="medal bronze ${medalClass(player.bronze)}">
+            ${player.bronze}
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
+
+
+  document.getElementById("visibleCount").textContent =
+    filtered.length.toLocaleString() +
+    (filtered.length === 1 ? " player" : " players");
+}
+
+
+function escapeHTML(value) {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+
+document
+  .getElementById("playerSearch")
+  .addEventListener("input", () => {
+
+    renderPlayers();
+
+    document
+      .getElementById("leaderboardRows")
+      .scrollTop = 0;
+  });
+
+
+loadLeaderboard();
+
+</script>
+
+</body>
+</html>
